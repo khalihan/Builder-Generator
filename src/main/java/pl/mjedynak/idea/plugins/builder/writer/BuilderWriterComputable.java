@@ -57,7 +57,8 @@ public class BuilderWriterComputable implements Computable<PsiElement> {
     }
 
     private PsiClass getBuilderPsiClass(Project project, PsiFieldsForBuilder psiFieldsForBuilder, PsiDirectory targetDirectory, String className, PsiClass psiClassFromEditor, String methodPrefix) {
-        BuilderPsiClassBuilder builder = builderPsiClassBuilder.aBuilder(project, targetDirectory, psiClassFromEditor, className, psiFieldsForBuilder)
+        BuilderPsiClassBuilder builder =
+				builderPsiClassBuilder.aBuilder(project, targetDirectory, psiClassFromEditor, className, psiFieldsForBuilder)
                 .withFields()
                 .withPrivateConstructor()
                 .withInitializingMethod()
