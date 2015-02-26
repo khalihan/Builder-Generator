@@ -25,6 +25,7 @@ import static org.springframework.test.util.ReflectionTestUtils.getField;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 @RunWith(MockitoJUnitRunner.class)
+@Ignore
 public class BuilderPsiClassBuilderTest {
 
     @InjectMocks private BuilderPsiClassBuilder psiClassBuilder;

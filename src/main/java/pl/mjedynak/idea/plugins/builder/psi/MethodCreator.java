@@ -3,6 +3,7 @@ package pl.mjedynak.idea.plugins.builder.psi;
 import com.intellij.psi.PsiElementFactory;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiMethod;
+import org.apache.commons.lang.StringUtils;
 import pl.mjedynak.idea.plugins.builder.settings.CodeStyleSettings;
 
 public class MethodCreator {
@@ -17,16 +18,20 @@ public class MethodCreator {
         this.builderClassName = builderClassName;
     }
 
-    public PsiMethod createMethod(PsiField psiField, String methodPrefix) {
+    public PsiMethod createMethod(PsiField psiField, String srcClassFieldName) {
         String fieldName = psiField.getName();
         String fieldType = psiField.getType().getPresentableText();
         String fieldNamePrefix = codeStyleSettings.getFieldNamePrefix();
         String fieldNameWithoutPrefix = fieldName.replaceFirst(fieldNamePrefix, "");
-        String parameterNamePrefix = codeStyleSettings.getParameterNamePrefix();
-        String parameterName = parameterNamePrefix + fieldNameWithoutPrefix;
-        String methodName = methodNameCreator.createMethodName(methodPrefix, fieldNameWithoutPrefix);
-        String methodText = "public " + builderClassName + " " + methodName + "(" + fieldType + " " + parameterName + ") { this."
-                + fieldName + " = " + parameterName + "; return this; }";
+
+        String methodName = fieldNameWithoutPrefix;//methodNameCreator.createMethodName(methodPrefix, fieldNameWithoutPrefix);
+        String fieldNameUppercase = StringUtils.capitalize(fieldNameWithoutPrefix);
+        StringBuilder buildMethodText = new StringBuilder();
+        buildMethodText.append(srcClassFieldName).append(".set").append(fieldNameUppercase).append("(").append(fieldName).append(");");
+
+        String methodText = "public " + builderClassName + " " + methodName + "(" + fieldType + " " + fieldName + ") {"
+                + buildMethodText.toString() +
+                "return this; }";
         return elementFactory.createMethodFromText(methodText, psiField);
     }
 }

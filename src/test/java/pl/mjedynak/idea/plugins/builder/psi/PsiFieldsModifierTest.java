@@ -6,6 +6,7 @@ import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.javadoc.PsiDocComment;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -19,6 +20,7 @@ import static org.mockito.Mockito.*;
 import static pl.mjedynak.idea.plugins.builder.psi.PsiFieldsModifier.FINAL;
 
 @RunWith(MockitoJUnitRunner.class)
+@Ignore
 public class PsiFieldsModifierTest {
 
     private PsiFieldsModifier psiFieldsModifier = new PsiFieldsModifier();

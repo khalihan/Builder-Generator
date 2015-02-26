@@ -65,7 +65,8 @@ public class BuilderPsiClassBuilder {
 
     public BuilderPsiClassBuilder withFields() {
         checkClassFieldsRequiredForBuilding();
-        psiFieldsModifier.modifyFields(psiFieldsForSetters, psiFieldsForConstructor, builderClass);
+        builderClass.add(psiHelper.createField(srcClass, srcClassFieldName));
+       // psiFieldsModifier.modifyFields(psiFieldsForSetters, psiFieldsForConstructor, builderClass);
         return this;
     }
 
@@ -73,12 +74,18 @@ public class BuilderPsiClassBuilder {
         checkClassFieldsRequiredForBuilding();
         PsiMethod constructor = elementFactory.createConstructor();
         constructor.getModifierList().setModifierProperty(PRIVATE_STRING, true);
-        insertCheckerCode(elementFactory, constructor, classInitializer());
+        String srcClassInitializer = classInitializer();
+        insertCodeBlock(elementFactory, constructor, srcClassInitializer);
         builderClass.add(constructor);
         return this;
     }
 
-    protected void insertCheckerCode(PsiElementFactory factory, PsiMethod method, String template) {
+    private String classInitializer(){
+        StringBuilder buildMethodText = new StringBuilder();
+        return buildMethodText.append(srcClassFieldName).append(" = new ").append(srcClassName).append("();").toString();
+    }
+
+    protected void insertCodeBlock(PsiElementFactory factory, PsiMethod method, String template) {
         //insert code checker into method
         try {
             PsiCodeBlock body = method.getBody();
@@ -93,20 +100,6 @@ public class BuilderPsiClassBuilder {
         }
     }
 
-    private String classInitializer(){
-        StringBuilder buildMethodText = new StringBuilder();
-        return buildMethodText.append(srcClassFieldName).append(" = new ").append(srcClassName).append("();").toString();
-    }
-
-    public BuilderPsiClassBuilder withInitializingMethod() {
-        checkClassFieldsRequiredForBuilding();
-        String prefix = isVowel(srcClassName.toLowerCase(Locale.ENGLISH).charAt(0)) ? AN_PREFIX : A_PREFIX;
-        PsiMethod staticMethod = elementFactory.createMethodFromText(
-                "public static " + builderClassName + prefix + srcClassName + "() { return new " + builderClassName + "();}", srcClass);
-        builderClass.add(staticMethod);
-        return this;
-    }
-
     public BuilderPsiClassBuilder withSetMethods(String methodPrefix) {
         checkClassFieldsRequiredForBuilding();
         for (PsiField psiFieldForSetter : psiFieldsForSetters) {
@@ -119,50 +112,32 @@ public class BuilderPsiClassBuilder {
     }
 
     private void createAndAddMethod(PsiField psiField, String methodPrefix) {
-        builderClass.add(methodCreator.createMethod(psiField, methodPrefix));
-    }
-
-    public BuilderPsiClassBuilder withButMethod() {
-        PsiMethod method = butMethodCreator.butMethod(builderClassName, builderClass, srcClass);
-        builderClass.add(method);
-        return this;
+        builderClass.add(methodCreator.createMethod(psiField, srcClassFieldName));
     }
 
     public PsiClass build() {
         checkBuilderField();
-        builderClass.add(psiHelper.createField(srcClass, srcClassFieldName));
         StringBuilder buildMethodText = new StringBuilder();
-        appendConstructor(buildMethodText);
-        appendSetMethods(buildMethodText);
+        buildMethodText.append("public ").append(srcClassName).append(" build() { ");
         buildMethodText.append("return ").append(srcClassFieldName).append(";}");
         PsiMethod buildMethod = elementFactory.createMethodFromText(buildMethodText.toString(), srcClass);
         builderClass.add(buildMethod);
         return builderClass;
     }
 
-    private void appendConstructor(StringBuilder buildMethodText) {
-        String constructorParameters = createConstructorParameters();
-        buildMethodText.append("public ").append(srcClassName).append(" build() { ").append(srcClassName).append(SPACE)
-                .append(srcClassFieldName).append(" = new ").append(srcClassName).append("(").append(constructorParameters).append(");");
+    public BuilderPsiClassBuilder withButMethod() {
+        //  PsiMethod method = butMethodCreator.butMethod(builderClassName, builderClass, srcClass);
+        // builderClass.add(method);
+        return this;
     }
 
-    private void appendSetMethods(StringBuilder buildMethodText) {
-        for (PsiField psiFieldsForSetter : psiFieldsForSetters) {
-            String fieldNamePrefix = codeStyleSettings.getFieldNamePrefix();
-            String fieldName = psiFieldsForSetter.getName();
-            String fieldNameWithoutPrefix = fieldName.replaceFirst(fieldNamePrefix, "");
-            String fieldNameUppercase = StringUtils.capitalize(fieldNameWithoutPrefix);
-            buildMethodText.append(srcClassFieldName).append(".set").append(fieldNameUppercase).append("(").append(fieldName).append(");");
-        }
-    }
-
-    private String createConstructorParameters() {
-        StringBuilder sb = new StringBuilder();
-        for (PsiField psiField : psiFieldsForConstructor) {
-            sb.append(psiField.getName()).append(SEMICOLON);
-        }
-        removeLastSemicolon(sb);
-        return sb.toString();
+    public BuilderPsiClassBuilder withInitializingMethod() {
+        checkClassFieldsRequiredForBuilding();
+        String prefix = isVowel(srcClassName.toLowerCase(Locale.ENGLISH).charAt(0)) ? AN_PREFIX : A_PREFIX;
+        PsiMethod staticMethod = elementFactory.createMethodFromText(
+                "public static " + builderClassName + prefix + srcClassName + "() { return new " + builderClassName + "();}", srcClass);
+        builderClass.add(staticMethod);
+        return this;
     }
 
     private void removeLastSemicolon(StringBuilder sb) {
