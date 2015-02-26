@@ -1,13 +1,8 @@
 package pl.mjedynak.idea.plugins.builder.psi;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.JavaDirectoryService;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiDirectory;
-import com.intellij.psi.PsiElementFactory;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiMethod;
+import com.intellij.psi.*;
+import com.intellij.util.IncorrectOperationException;
 import org.apache.commons.lang.StringUtils;
 import pl.mjedynak.idea.plugins.builder.psi.model.PsiFieldsForBuilder;
 import pl.mjedynak.idea.plugins.builder.settings.CodeStyleSettings;
@@ -64,6 +59,7 @@ public class BuilderPsiClassBuilder {
         psiFieldsForConstructor = psiFieldsForBuilder.getFieldsForConstructor();
         methodCreator = new MethodCreator(elementFactory, builderClassName);
         butMethodCreator = new ButMethodCreator(elementFactory);
+
         return this;
     }
 
@@ -77,8 +73,29 @@ public class BuilderPsiClassBuilder {
         checkClassFieldsRequiredForBuilding();
         PsiMethod constructor = elementFactory.createConstructor();
         constructor.getModifierList().setModifierProperty(PRIVATE_STRING, true);
+        insertCheckerCode(elementFactory, constructor, classInitializer());
         builderClass.add(constructor);
         return this;
+    }
+
+    protected void insertCheckerCode(PsiElementFactory factory, PsiMethod method, String template) {
+        //insert code checker into method
+        try {
+            PsiCodeBlock body = method.getBody();
+            PsiElement code = factory.createStatementFromText(template, method);
+            if (body.getLBrace() != null) {
+                method.addAfter(code, body.getLBrace());
+            } else {
+                body.add(code);
+            }
+        } catch (IncorrectOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String classInitializer(){
+        StringBuilder buildMethodText = new StringBuilder();
+        return buildMethodText.append(srcClassFieldName).append(" = new ").append(srcClassName).append("();").toString();
     }
 
     public BuilderPsiClassBuilder withInitializingMethod() {
@@ -101,18 +118,19 @@ public class BuilderPsiClassBuilder {
         return this;
     }
 
+    private void createAndAddMethod(PsiField psiField, String methodPrefix) {
+        builderClass.add(methodCreator.createMethod(psiField, methodPrefix));
+    }
+
     public BuilderPsiClassBuilder withButMethod() {
         PsiMethod method = butMethodCreator.butMethod(builderClassName, builderClass, srcClass);
         builderClass.add(method);
         return this;
     }
 
-    private void createAndAddMethod(PsiField psiField, String methodPrefix) {
-        builderClass.add(methodCreator.createMethod(psiField, methodPrefix));
-    }
-
     public PsiClass build() {
         checkBuilderField();
+        builderClass.add(psiHelper.createField(srcClass, srcClassFieldName));
         StringBuilder buildMethodText = new StringBuilder();
         appendConstructor(buildMethodText);
         appendSetMethods(buildMethodText);

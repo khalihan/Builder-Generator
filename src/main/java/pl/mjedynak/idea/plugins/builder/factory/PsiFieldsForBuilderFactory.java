@@ -4,7 +4,6 @@ import com.intellij.codeInsight.generation.PsiElementClassMember;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
-import pl.mjedynak.idea.plugins.builder.factory.PsiFieldsForBuilderFactory;
 import pl.mjedynak.idea.plugins.builder.psi.model.PsiFieldsForBuilder;
 import pl.mjedynak.idea.plugins.builder.verifier.PsiFieldVerifier;
 
@@ -27,6 +26,7 @@ public class PsiFieldsForBuilderFactory {
             if (psiElement instanceof PsiField) {
                 if (psiFieldVerifier.isSetInSetterMethod((PsiField) psiElement, psiClass)) {
                     psiFieldsForSetters.add((PsiField) psiElement);
+
                 } else if (psiFieldVerifier.isSetInConstructor((PsiField) psiElement, psiClass)) {
                     psiFieldsForConstructor.add((PsiField) psiElement);
                 }

@@ -9,17 +9,10 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.pom.Navigatable;
-import com.intellij.psi.JavaDirectoryService;
-import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassOwner;
-import com.intellij.psi.PsiDirectory;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiPackage;
+import com.intellij.psi.*;
 import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.psi.util.PsiUtilBase;
 import com.intellij.refactoring.util.RefactoringMessageUtil;
-import pl.mjedynak.idea.plugins.builder.psi.PsiHelper;
 
 import static com.intellij.ide.util.EditSourceUtil.getDescriptor;
 
@@ -89,5 +82,17 @@ public class PsiHelper {
 
     public Module findModuleForPsiClass(PsiClass psiClass, Project project) {
         return ModuleUtil.findModuleForFile(psiClass.getContainingFile().getVirtualFile(), project);
+    }
+
+    public PsiField createField(PsiClass viewClass, String fieldName) {
+        PsiElementFactory factory = JavaPsiFacade.getElementFactory(viewClass.getProject());
+        PsiField field = factory.createField(fieldName, factory.createType(viewClass));
+        PsiModifierList modifierList = field.getModifierList();
+        if (modifierList != null) {
+            modifierList.setModifierProperty(PsiModifier.PRIVATE, true);
+        } else {
+            //TODO: handle error condition, throw exception!!
+        }
+        return field;
     }
 }
